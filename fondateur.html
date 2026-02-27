@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="OPESTRAT - Qui sommes-nous. Philippe Baillé, fondateur, ancien officier supérieur spécialiste de la défense, de la cyberdéfense et de la lutte informationnelle.">
+    <title>OPESTRAT | Qui sommes-nous</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* About Page Specific Styles */
+        .about-hero {
+            padding: 10rem 0 4rem;
+            background: linear-gradient(135deg, var(--color-navy) 0%, var(--color-navy-dark) 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .about-hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                radial-gradient(ellipse at 20% 80%, rgba(200, 16, 46, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(255, 255, 255, 0.03) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .about-hero-content {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+        }
+
+        .about-hero h1 {
+            font-size: clamp(1.3rem, 3vw, 1.8rem);
+            font-weight: 300;
+            color: rgba(255, 255, 255, 0.85);
+            max-width: 650px;
+            margin: 0 auto;
+            line-height: 1.7;
+            letter-spacing: -0.01em;
+        }
+
+        .about-hero .lead {
+            font-size: clamp(1.3rem, 3vw, 1.8rem);
+            font-weight: 300;
+            color: rgba(255, 255, 255, 0.85);
+            max-width: 650px;
+            margin: 0.5rem auto 0;
+            line-height: 1.7;
+        }
+
+        /* Founder Section */
+        .founder {
+            padding: 5rem 0;
+            background: var(--color-white);
+        }
+
+        .founder-intro {
+            max-width: 800px;
+            margin: 0 auto 4rem;
+            text-align: center;
+        }
+
+        .founder-name {
+            font-size: 1.6rem;
+            font-weight: 600;
+            color: var(--color-navy);
+            margin-bottom: 0.5rem;
+        }
+
+        .founder-title {
+            font-size: 1rem;
+            font-weight: 400;
+            color: var(--color-red);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 2rem;
+        }
+
+        .founder-summary {
+            font-size: 1.15rem;
+            color: var(--color-gray-dark);
+            line-height: 1.8;
+        }
+
+        .founder-summary strong {
+            color: var(--color-navy);
+            font-weight: 500;
+        }
+
+        /* Parcours Section */
+        .parcours {
+            padding: 5rem 0;
+            background: var(--color-gray-light);
+        }
+
+        .parcours-text {
+            max-width: 800px;
+            margin: 0 auto;
+            font-size: 1.08rem;
+            color: var(--color-gray-dark);
+            line-height: 1.9;
+        }
+
+        .parcours-text p + p {
+            margin-top: 1.5rem;
+        }
+
+        .parcours-text strong {
+            color: var(--color-navy);
+            font-weight: 500;
+        }
+
+        /* Vision Section */
+        .vision {
+            padding: 5rem 0;
+            background: var(--color-white);
+        }
+
+        .vision-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .vision-block {
+            margin-bottom: 3rem;
+        }
+
+        .vision-block:last-child {
+            margin-bottom: 0;
+        }
+
+        .vision-block h3 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--color-navy);
+            margin-bottom: 1rem;
+            padding-left: 1rem;
+            border-left: 3px solid var(--color-red);
+        }
+
+        .vision-block p {
+            font-size: 1.05rem;
+            color: var(--color-gray-dark);
+            line-height: 1.8;
+        }
+
+        .vision-block p + p {
+            margin-top: 1rem;
+        }
+
+        .vision-block p strong {
+            color: var(--color-navy);
+            font-weight: 500;
+        }
+
+        /* CTA Section */
+        .about-cta {
+            padding: 5rem 0;
+            background: var(--color-navy);
+            text-align: center;
+        }
+
+        .about-cta h2 {
+            font-size: clamp(1.5rem, 3vw, 2rem);
+            font-weight: 600;
+            color: var(--color-white);
+            margin-bottom: 1rem;
+        }
+
+        .about-cta h2::after {
+            display: none;
+        }
+
+        .about-cta p {
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 2.5rem;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .about-cta .cta-btn {
+            display: inline-block;
+            padding: 1rem 2.5rem;
+            background: var(--color-red);
+            color: var(--color-white);
+            font-weight: 500;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            border-radius: 2px;
+            transition: all var(--transition-base);
+        }
+
+        .about-cta .cta-btn:hover {
+            background: var(--color-red-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(200, 16, 46, 0.3);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .about-hero {
+                padding: 8rem 0 3rem;
+            }
+
+            .founder {
+                padding: 3rem 0;
+            }
+
+            .parcours {
+                padding: 3rem 0;
+            }
+
+            .vision {
+                padding: 3rem 0;
+            }
+
+            .about-cta {
+                padding: 3rem 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo">OPESTRAT</a>
+            <button class="nav-toggle" id="navToggle" aria-label="Menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="index.html#mission">Mission</a></li>
+                <li><a href="index.html#domaines">Domaines</a></li>
+                <li><a href="fondateur.html">Fondateur</a></li>
+                <li><a href="index.html#contact">Contact</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <header class="about-hero">
+        <div class="container about-hero-content">
+            <h1 class="fade-in">28 ans au service de la France, au contact des crises et des menaces.</h1>
+            <p class="lead fade-in">Aujourd'hui au service de ceux qui veulent agir.</p>
+        </div>
+    </header>
+
+    <!-- Fondateur -->
+    <section class="founder">
+        <div class="container">
+            <div class="founder-intro reveal">
+                <p class="founder-name">Philippe Baillé</p>
+                <p class="founder-title">Fondateur d'OPESTRAT</p>
+                <p class="founder-summary">
+                    Ancien colonel de l'armée de Terre, Philippe Baillé a consacré plus de <strong>28 ans</strong> à la défense nationale dans des fonctions opérationnelles, de commandement et de stratégie. Spécialiste de la <strong>communication stratégique</strong>, de la <strong>cyberdéfense</strong> et de la <strong>lutte informationnelle</strong>, il a exercé des responsabilités au plus haut niveau de l'appareil militaire français : État-major des Armées, Commandement de la cyberdéfense (COMCYBER), Direction de la communication du ministère des Armées.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Parcours -->
+    <section class="parcours">
+        <div class="container">
+            <h2 class="section-title reveal">Parcours</h2>
+            <div class="parcours-text reveal">
+                <p>Officier parachutiste formé au <strong>17e Régiment du génie parachutiste</strong>, Philippe Baillé commence sa carrière sur le terrain : OPEX au Tchad, en ex-Yougoslavie, notamment dans la neutralisation d'engins explosifs. Il assume ensuite des fonctions opérationnelles et de commandement à la <strong>Brigade de sapeurs-pompiers de Paris</strong> — compagnie d'incendie, chef des opérations, puis chef de corps de 1 800 militaires couvrant le nord de Paris et la Seine-Saint-Denis.</p>
+                <p>Lauréat de l'<strong>École de guerre</strong>, il est projeté en Afghanistan comme chef du centre presse de l'opération Pamir. Il rejoint ensuite la <strong>Direction de la communication du ministère des Armées</strong> (DICoD), où il dirige le bureau rayonnement et relations extérieures, avant d'être déployé comme conseiller communication de la <strong>force Barkhane</strong>.</p>
+                <p>Au <strong>Commandement de la cyberdéfense</strong> (COMCYBER), il crée et dirige la fonction de <strong>lutte informatique d'influence</strong> (L2I) — doctrine, structuration des équipes, conduite des opérations dans le champ informationnel. Il termine sa carrière militaire à l'<strong>État-major des Armées</strong>, chef du pilier influence et lutte informationnelle au sein du Pôle Anticipation stratégique et orientation (ASO).</p>
+                <p>En 2025, il fonde <strong>OPESTRAT</strong>.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Vision & Valeurs -->
+    <section class="vision">
+        <div class="container">
+            <h2 class="section-title reveal">Vision et convictions</h2>
+            <div class="vision-content">
+                <div class="vision-block reveal">
+                    <h3>Pourquoi OPESTRAT</h3>
+                    <p>Les menaces contemporaines ne respectent pas les frontières entre le militaire et le civil, entre le public et le privé. La désinformation, les ingérences étrangères, la guerre hybride touchent aussi bien les institutions que les entreprises et les collectivités.</p>
+                    <p>OPESTRAT est née d'un constat : <strong>les compétences forgées dans les environnements les plus exigeants — opérations extérieures, cyberdéfense, gestion de crise — sont directement transposables au monde économique</strong>. Ceux qui font face à l'incertitude ont besoin de méthode, de lucidité et d'expérience, pas seulement de théorie.</p>
+                </div>
+
+                <div class="vision-block reveal">
+                    <h3>Une approche opérationnelle</h3>
+                    <p>Le nom OPESTRAT porte notre philosophie : <strong>toute stratégie n'a de valeur que si elle se traduit en action</strong>. Notre rôle n'est pas de produire des rapports qui restent dans un tiroir, mais d'accompagner nos clients dans la mise en oeuvre concrète de leurs décisions, dans des délais contraints et des environnements complexes.</p>
+                </div>
+
+                <div class="vision-block reveal">
+                    <h3>Nos valeurs</h3>
+                    <p><strong>Agilité</strong> — Héritée de 28 ans d'engagements opérationnels, appliquée avec la même exigence dans chaque mission de conseil.</p>
+                    <p><strong>Discrétion</strong> — Nos clients opèrent dans des domaines sensibles. La confidentialité n'est pas une option, c'est un prérequis.</p>
+                    <p><strong>Engagement</strong> — Nous nous impliquons dans la réussite de chaque mission comme si elle était la nôtre. Parce que la confiance se mérite par les résultats.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="about-cta">
+        <div class="container">
+            <h2 class="reveal">Parlons de vos enjeux</h2>
+            <p class="reveal">Un échange de 30 minutes pour comprendre votre situation et identifier les leviers d'action.</p>
+            <a href="index.html#contact" class="cta-btn reveal">Prendre contact</a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <img src="signal-2026-01-14-210915.png" alt="OPESTRAT">
+                </div>
+                <p class="footer-tagline">Opérationnalisons votre stratégie</p>
+                <p class="footer-copyright">&copy; 2026 OPESTRAT. Tous droits réservés.</p>
+                <div class="footer-legal">
+                    <p class="footer-legal-title">Mentions légales</p>
+                    <p>OPESTRAT — SAS au capital de 1 000 &euro;</p>
+                    <p>RCS Orléans 995 204 815 — SIREN 995 204 815</p>
+                    <p>Siège social : Lieudit "La Poussetière", 231 rue du Bois Picard, 45220 Triguères</p>
+                    <p>Président : Philippe Baillé</p>
+                    <p>Hébergement : OVH SAS — 2 rue Kellermann, 59100 Roubaix, France</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
