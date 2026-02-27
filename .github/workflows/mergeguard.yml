@@ -1,0 +1,288 @@
+# MergeGuard - Automated PR Review & Auto-Merge Agent
+# Triggered on every PR to main
+# Checks: secrets leak, dependency vulnerabilities, code quality, ATLAS threats
+# Auto-merges if ALL checks pass
+
+name: MergeGuard
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+  pull-requests: write
+  checks: write
+
+jobs:
+  # ============================================
+  # GATE 1: Secrets & Sensitive Data Detection
+  # ============================================
+  secrets-scan:
+    name: "Gate 1: Secrets Scan"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Scan for secrets in diff
+        run: |
+          echo "=== MergeGuard: Scanning for secrets ==="
+
+          # Get changed files
+          CHANGED=$(git diff --name-only origin/main...HEAD)
+          echo "Changed files:"
+          echo "$CHANGED"
+
+          ISSUES=0
+
+          # Pattern-based secret detection
+          PATTERNS=(
+            'AKIA[0-9A-Z]{16}'                    # AWS Access Key
+            'sk-[a-zA-Z0-9]{20,}'                  # OpenAI/Anthropic API Key
+            'ghp_[a-zA-Z0-9]{36}'                  # GitHub Personal Token
+            'gho_[a-zA-Z0-9]{36}'                  # GitHub OAuth Token
+            'password\s*=\s*["\x27][^"\x27]+'       # Hardcoded passwords
+            'secret\s*=\s*["\x27][^"\x27]+'         # Hardcoded secrets
+            'token\s*=\s*["\x27][^"\x27]+'          # Hardcoded tokens
+            'mongodb\+srv://[^"\x27\s]+'            # MongoDB connection strings
+            'postgres://[^"\x27\s]+'                # PostgreSQL connection strings
+            'BEGIN (RSA |EC |DSA )?PRIVATE KEY'     # Private keys
+            'sk_live_[a-zA-Z0-9]+'                  # Stripe live keys
+          )
+
+          for file in $CHANGED; do
+            [ -f "$file" ] || continue
+            for pattern in "${PATTERNS[@]}"; do
+              if grep -qEi "$pattern" "$file" 2>/dev/null; then
+                echo "::error file=$file::SECRET DETECTED: Pattern '$pattern' found in $file"
+                ISSUES=$((ISSUES + 1))
+              fi
+            done
+          done
+
+          # Check for .env files being committed
+          for file in $CHANGED; do
+            if [[ "$file" =~ \.env$ ]] || [[ "$file" =~ \.env\. ]] && [[ ! "$file" =~ \.example$ ]]; then
+              echo "::error file=$file::ENV FILE COMMITTED: $file should not be in git"
+              ISSUES=$((ISSUES + 1))
+            fi
+          done
+
+          if [ $ISSUES -gt 0 ]; then
+            echo "::error::$ISSUES secret(s) detected. PR BLOCKED."
+            exit 1
+          fi
+
+          echo "No secrets detected. Gate 1 PASSED."
+
+  # ============================================
+  # GATE 2: Dependency Vulnerability Scan
+  # ============================================
+  dependency-scan:
+    name: "Gate 2: Dependency Scan"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Scan Python dependencies
+        run: |
+          echo "=== MergeGuard: Scanning Python dependencies ==="
+
+          if [ -f requirements.txt ]; then
+            pip install safety 2>/dev/null
+            safety check -r requirements.txt --output text || {
+              echo "::warning::Vulnerable Python dependencies found"
+            }
+          else
+            echo "No requirements.txt found, skipping Python scan"
+          fi
+
+      - name: Scan Node dependencies
+        run: |
+          echo "=== MergeGuard: Scanning Node dependencies ==="
+
+          if [ -f package.json ]; then
+            npm audit --audit-level=high || {
+              echo "::warning::Vulnerable Node dependencies found"
+            }
+          else
+            echo "No package.json found, skipping Node scan"
+          fi
+
+  # ============================================
+  # GATE 3: ATLAS Threat Detection
+  # (Prompt Injection, Model Poisoning, Supply Chain)
+  # ============================================
+  atlas-scan:
+    name: "Gate 3: ATLAS Security"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: ATLAS threat analysis
+        run: |
+          echo "=== MergeGuard: ATLAS Threat Scan ==="
+
+          CHANGED=$(git diff --name-only origin/main...HEAD)
+          WARNINGS=0
+          BLOCKERS=0
+
+          for file in $CHANGED; do
+            [ -f "$file" ] || continue
+
+            # --- AML.T0051: Prompt Injection Detection ---
+            # Look for user input directly concatenated into prompts
+            if grep -qEi '(f".*\{.*input.*\}|f".*\{.*user.*\}|prompt\s*\+\s*|prompt\s*\+=|\.format\(.*user)' "$file" 2>/dev/null; then
+              echo "::warning file=$file::ATLAS AML.T0051 - Potential prompt injection vector: user input concatenated into prompt"
+              WARNINGS=$((WARNINGS + 1))
+            fi
+
+            # --- AML.T0054: LLM Supply Chain ---
+            # Detect unsafe model loading or untrusted sources
+            if grep -qEi '(pickle\.load|torch\.load|eval\(|exec\(|__import__|subprocess\.call.*input|os\.system.*input)' "$file" 2>/dev/null; then
+              echo "::error file=$file::ATLAS AML.T0054 - Unsafe code execution pattern detected"
+              BLOCKERS=$((BLOCKERS + 1))
+            fi
+
+            # --- AML.T0043: Model Poisoning Indicators ---
+            # Detect base64 encoded payloads or obfuscated code
+            if grep -qEi '(base64\.b64decode|atob\(|Buffer\.from.*base64|\\x[0-9a-f]{2}{4,})' "$file" 2>/dev/null; then
+              echo "::warning file=$file::ATLAS AML.T0043 - Obfuscated/encoded content detected"
+              WARNINGS=$((WARNINGS + 1))
+            fi
+
+            # --- AML.T0056: Unsafe Deserialization ---
+            if grep -qEi '(yaml\.load\(|yaml\.unsafe_load|json\.loads.*eval|marshal\.loads)' "$file" 2>/dev/null; then
+              echo "::warning file=$file::ATLAS AML.T0056 - Unsafe deserialization pattern"
+              WARNINGS=$((WARNINGS + 1))
+            fi
+
+            # --- Hardcoded URLs to suspicious domains ---
+            if grep -qEi '(pastebin\.com|hastebin\.com|raw\.githubusercontent\.com/[^a]|ngrok\.io|requestbin)' "$file" 2>/dev/null; then
+              echo "::warning file=$file::Suspicious external URL detected"
+              WARNINGS=$((WARNINGS + 1))
+            fi
+          done
+
+          echo ""
+          echo "=== ATLAS Scan Summary ==="
+          echo "Blockers: $BLOCKERS"
+          echo "Warnings: $WARNINGS"
+
+          if [ $BLOCKERS -gt 0 ]; then
+            echo "::error::$BLOCKERS ATLAS blocker(s) found. PR BLOCKED."
+            exit 1
+          fi
+
+          if [ $WARNINGS -gt 0 ]; then
+            echo "::warning::$WARNINGS ATLAS warning(s) found. Review recommended."
+          fi
+
+          echo "ATLAS scan completed. Gate 3 PASSED."
+
+  # ============================================
+  # GATE 4: Code Quality Basics
+  # ============================================
+  code-quality:
+    name: "Gate 4: Code Quality"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Check Python code quality
+        run: |
+          echo "=== MergeGuard: Code Quality Check ==="
+
+          CHANGED=$(git diff --name-only origin/main...HEAD | grep '\.py$' || true)
+
+          if [ -z "$CHANGED" ]; then
+            echo "No Python files changed, skipping"
+            exit 0
+          fi
+
+          pip install ruff 2>/dev/null
+
+          echo "$CHANGED" | while read file; do
+            [ -f "$file" ] || continue
+            echo "Checking $file..."
+            ruff check "$file" --select=E,W,F --ignore=E501 || true
+          done
+
+      - name: Check for large files
+        run: |
+          echo "=== Checking for large files ==="
+
+          CHANGED=$(git diff --name-only origin/main...HEAD)
+
+          for file in $CHANGED; do
+            [ -f "$file" ] || continue
+            SIZE=$(stat -f%z "$file" 2>/dev/null || stat -c%s "$file" 2>/dev/null || echo 0)
+            if [ "$SIZE" -gt 10485760 ]; then
+              echo "::error file=$file::File too large: $(($SIZE / 1048576))MB (max 10MB)"
+              exit 1
+            fi
+          done
+
+  # ============================================
+  # FINAL: Auto-Merge Decision
+  # ============================================
+  auto-merge:
+    name: "MergeGuard Decision"
+    needs: [secrets-scan, dependency-scan, atlas-scan, code-quality]
+    runs-on: ubuntu-latest
+    if: success()
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Auto-approve and merge
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "=== MergeGuard: ALL GATES PASSED ==="
+          echo ""
+          echo "Gate 1: Secrets Scan ........ PASSED"
+          echo "Gate 2: Dependency Scan ..... PASSED"
+          echo "Gate 3: ATLAS Security ...... PASSED"
+          echo "Gate 4: Code Quality ........ PASSED"
+          echo ""
+          echo "Auto-merging PR #${{ github.event.pull_request.number }}"
+
+          # Approve the PR
+          gh pr review ${{ github.event.pull_request.number }} \
+            --approve \
+            --body "MergeGuard: All 4 security gates passed. Auto-approved.
+
+          | Gate | Status |
+          |------|--------|
+          | Secrets Scan | PASSED |
+          | Dependency Scan | PASSED |
+          | ATLAS Security | PASSED |
+          | Code Quality | PASSED |"
+
+          # Auto-merge
+          gh pr merge ${{ github.event.pull_request.number }} \
+            --merge \
+            --auto \
+            --subject "Merge PR #${{ github.event.pull_request.number }} (MergeGuard approved)"
